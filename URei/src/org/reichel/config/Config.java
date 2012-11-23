@@ -1,5 +1,7 @@
 package org.reichel.config;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -12,19 +14,27 @@ public class Config {
 
 	private Properties property = new Properties();
 
-	public Config(Charset charset){
+	public Config(Charset charset, String configPath){
 		if(charset == null){
 			throw new IllegalArgumentException("Parameter charset cannot be null.");
 		}
+		if(configPath == null || "".equals(configPath)){
+			throw new IllegalArgumentException("Parameter configPath cannot be null.");
+		}
+		File fileConfig = new File(configPath);
+		if(!fileConfig.exists()){
+			throw new IllegalArgumentException("Configuração não encontrada: " + fileConfig.getAbsolutePath());
+		}
 		try {
-			this.property.load(new InputStreamReader(this.getClass().getResourceAsStream("/config.properties"),charset));
+			
+			this.property.load(new InputStreamReader(new FileInputStream(fileConfig),charset));
 		} catch (IOException e) {
 			System.out.println("Erro ao carregar propriedade 'config.properties'. " + e.getClass().getName() + ":" + e.getMessage());
 		}
 	}
 	
 	public Config(){
-		this(Charset.forName("UTF-8"));
+		this(Charset.forName("UTF-8"), "config" + File.separatorChar + "config.properties");
 	}
 	
 	public String get(String key) {
@@ -41,11 +51,6 @@ public class Config {
 			result.add((String) o );
 		}
 		return result;
-	}
-	
-	public static void main(String[] args) {
-		Config config = new Config();
-		System.out.println(config.get("projetos.pm"));
 	}
 	
 }
