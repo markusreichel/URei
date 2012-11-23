@@ -12,7 +12,7 @@ public class SaveLog {
 	
 	private final String path;
 	
-	public SaveLog(String path){
+	private SaveLog(String path){
 		if(path == null){
 			throw new IllegalArgumentException("Parameter path cannot be null.");
 		}
@@ -26,14 +26,19 @@ public class SaveLog {
 		this.path = path;
 	}
 	
-	public static SaveLog save(String path, String log){
-		return new SaveLog(path).save(log);
+	public static SaveLog bookFile(String path){
+		return new SaveLog(path).bookFile();
 	}
 	
-	public SaveLog save(String log){
+	private SaveLog bookFile() {
+		getLogFile();
+		return this;
+	}
+
+	public File save(String log){
 		getLogFile();
 		write(log);
-		return this;
+		return this.file;
 	}
 
 	private void write(String log) {
@@ -76,5 +81,4 @@ public class SaveLog {
 	public String getPath() {
 		return path;
 	}
-	
 }
