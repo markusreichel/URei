@@ -2,17 +2,25 @@ package org.reichel.config;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
+
+import org.reichel.properties.SortedProperties;
 
 public class Config {
 
-	private Properties property = new Properties();
+	private SortedProperties property = new SortedProperties();
+	
+	private final String configPath;
+	
+	private final Charset charset;
 
 	public Config(Charset charset, String configPath){
 		if(charset == null){
@@ -22,14 +30,16 @@ public class Config {
 			throw new IllegalArgumentException("Parameter configPath cannot be null.");
 		}
 		File fileConfig = new File(configPath);
+		this.configPath = configPath;
+		this.charset = charset;
 		if(!fileConfig.exists()){
 			throw new IllegalArgumentException("Configuração não encontrada: " + fileConfig.getAbsolutePath());
 		}
 		try {
 			
-			this.property.load(new InputStreamReader(new FileInputStream(fileConfig),charset));
+			this.property.load(new InputStreamReader(new FileInputStream(fileConfig),this.charset));
 		} catch (IOException e) {
-			System.out.println("Erro ao carregar propriedade 'config.properties'. " + e.getClass().getName() + ":" + e.getMessage());
+			System.out.println("Erro ao carregar propriedade '" + this.configPath + "'. " + e.getClass().getName() + ":" + e.getMessage());
 		}
 	}
 	
@@ -51,6 +61,20 @@ public class Config {
 			result.add((String) o );
 		}
 		return result;
+	}
+	
+	public void save(){
+		try {
+			this.property.store(new OutputStreamWriter(new FileOutputStream(this.configPath), this.charset), "Última atualização");
+		} catch (FileNotFoundException e) {
+			System.out.println("Erro ao salvar propriedade '" + this.configPath + "'. " + e.getClass().getName() + ":" + e.getMessage());
+		} catch (IOException e) {
+			System.out.println("Erro ao carregar propriedade '" + this.configPath + "'. " + e.getClass().getName() + ":" + e.getMessage());		
+		}
+	}
+	
+	public void put(String key, String value){
+		this.property.setProperty(key, value);
 	}
 	
 }
