@@ -35,8 +35,11 @@ public class Config {
 		if(!fileConfig.exists()){
 			throw new IllegalArgumentException("Configuração não encontrada: " + fileConfig.getAbsolutePath());
 		}
+		loadProperty(fileConfig);
+	}
+
+	private void loadProperty(File fileConfig) {
 		try {
-			
 			this.property.load(new InputStreamReader(new FileInputStream(fileConfig),this.charset));
 		} catch (IOException e) {
 			System.out.println("Erro ao carregar propriedade '" + this.configPath + "'. " + e.getClass().getName() + ":" + e.getMessage());
@@ -75,6 +78,11 @@ public class Config {
 	
 	public void put(String key, String value){
 		this.property.setProperty(key, value);
+	}
+	
+	public void reload(){
+		this.property.clear();
+		loadProperty(new File(this.configPath));
 	}
 	
 }
