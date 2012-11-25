@@ -85,4 +85,9 @@ public class Config {
 		loadProperty(new File(this.configPath));
 	}
 	
+	public void saveAndReload(){
+		save();
+		reload();
+	}
+	
 }
