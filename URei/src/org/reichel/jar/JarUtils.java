@@ -21,7 +21,7 @@ public class JarUtils {
 
 	/**
 	 * Extrai todos os arquivos de um arquivo jar para um diretório.
-	 * Exemplo de utilização:
+	 * Exemplo de utilização para extrair todos os arquivos:
 	 * <pre>
 	 *  try {
      *    JarUtils.extractFiles("target/URei.jar", "target/extract");
@@ -34,13 +34,41 @@ public class JarUtils {
 	 * @throws IOException quando houver problemas ao ler e/ou escrever arquivos
 	 */
 	public static void extractFiles(String jarFilePath, String targetFolder) throws IOException {
+		extractFiles(jarFilePath, targetFolder, true);
+	}
+
+	/**
+	 * Extrai todos os arquivos de um arquivo jar para um diretório.
+	 * Caso o parametro extractMetaInf for false TODOS os caminhos de arquivo que contiver o nome META-INF não serão extraídos.
+	 * Exemplo de utilização para extrair todos os arquivos:
+	 * <pre>
+	 *  try {
+     *    JarUtils.extractFiles("target/URei.jar", "target/extract");
+	 *  } catch (IOException e) {
+	 *    System.out.println(e.getMessage());
+	 *  }
+	 * </pre>
+	 * Exemplo de utilização para extrair tudo menos o diretório META-INF:
+	 * <pre>
+	 *  try {
+     *    JarUtils.extractFiles("target/URei.jar", "target/extract", false);
+	 *  } catch (IOException e) {
+	 *    System.out.println(e.getMessage());
+	 *  }
+	 * </pre>
+	 * 
+	 * @param jarFilePath caminho do arquivo jar a ser extraído ex: config\ambienteconfig.jar
+	 * @param targetFolder caminho do diretório raiz onde os arquivos serão extraídos ex: config\extract
+	 * @throws IOException quando houver problemas ao ler e/ou escrever arquivos
+	 */
+	public static void extractFiles(String jarFilePath, String targetFolder, boolean extractMetaInf) throws IOException {
 		if(jarFilePath == null || "".equals(jarFilePath)){
 			throw new IllegalArgumentException("Parametro jarFilePath não pode ser vazio ou nulo.");
 		}
 		if(targetFolder == null){
 			throw new IllegalArgumentException("Parametro jarFilePath não pode ser nulo.");
 		}
-
+		
 		if(!targetFolder.endsWith(Character.toString(File.separatorChar))){
 			targetFolder += File.separatorChar;
 		}
@@ -51,9 +79,11 @@ public class JarUtils {
 		while(jarEntries.hasMoreElements()){
 			JarEntry jarEntry = jarEntries.nextElement();
 			String name = jarEntry.getName();
-			targetFile = new File(targetFolder + name);
-			createDirectories(targetFolder, targetFile, jarEntry, name);
-			doExtractFile(jarFile, jarEntry, targetFile);
+			if(!name.contains("META-INF") || extractMetaInf){
+				targetFile = new File(targetFolder + name);
+				createDirectories(targetFolder, targetFile, jarEntry, name);
+				doExtractFile(jarFile, jarEntry, targetFile);
+			}
 		}
 	}
 
