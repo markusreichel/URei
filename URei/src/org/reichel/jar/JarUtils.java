@@ -90,11 +90,11 @@ public class JarUtils {
 	/**
 	 * Método para facilitar a recuperar a versão de um jar.
 	 * @param jarFilePath caminho do arquivo jar
-	 * @return JarVersion objeto com a versão do jar ou null se não encontrar o atributo 'Version' no MANIFEST.MF
+	 * @return JarVersion objeto com a versão do jar ou null se não encontrar o atributo 'Implementation-Version' no MANIFEST.MF
 	 * @throws IOException se algum problema ocorrer ao ler o arquivo jar.
 	 */
 	public static JarVersion getJarVersion(String jarFilePath) throws IOException{
-		String jarAttributeVersion = getJarAttribute(jarFilePath, "Version");
+		String jarAttributeVersion = getJarAttribute(jarFilePath, "Implementation-Version");
 		return jarAttributeVersion != null? new JarVersion(jarAttributeVersion) : null;
 	}
 

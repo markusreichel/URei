@@ -23,14 +23,14 @@ public class JarVersion implements Comparable<JarVersion>{
 	private final Integer maintenance;
 
 	public JarVersion(String fullVersion){
-		Pattern pattern = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)");
+		Pattern pattern = Pattern.compile("(\\d+){1}\\.{0,1}(\\d+){0,}\\.{0,1}(\\d+){0,}");
 		Matcher matcher = pattern.matcher(fullVersion);
 		if(!matcher.matches()){
 			throw new IllegalArgumentException("Versão: '" + fullVersion + "' não é uma versão válida, exemplo de versão válida: 1.5.33");
 		}
 		this.major = Integer.valueOf(matcher.group(1));
-		this.minor = Integer.valueOf(matcher.group(2));
-		this.maintenance = Integer.valueOf(matcher.group(3));
+		this.minor = Integer.valueOf(matcher.group(2) == null ? "0" : matcher.group(2));
+		this.maintenance = Integer.valueOf(matcher.group(3) == null ? "0": matcher.group(3));
 	}
 	
 	public Integer getMajor() {
@@ -68,4 +68,5 @@ public class JarVersion implements Comparable<JarVersion>{
 		
 		return this.getMaintenance().compareTo(o.getMaintenance());
 	}
+	
 }
