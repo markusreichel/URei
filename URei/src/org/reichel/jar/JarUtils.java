@@ -5,8 +5,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 /**
  * Classe utilitária para lidar com arquivos jar.
@@ -55,6 +57,38 @@ public class JarUtils {
 		}
 	}
 
+	/**
+	 * Método para facilitar a recuperar a versão de um jar.
+	 * @param jarFilePath caminho do arquivo jar
+	 * @return JarVersion objeto com a versão do jar ou null se não encontrar o atributo 'Version' no MANIFEST.MF
+	 * @throws IOException se algum problema ocorrer ao ler o arquivo jar.
+	 */
+	public static JarVersion getJarVersion(String jarFilePath) throws IOException{
+		String jarAttributeVersion = getJarAttribute(jarFilePath, "Version");
+		return jarAttributeVersion != null? new JarVersion(jarAttributeVersion) : null;
+	}
+
+	/**
+	 * Método para facilitar a recuperar atributos principais do arquivo MANIFEST.MF de um arquivo jar.
+	 * @param jarFilePath caminho do arquivo jar
+	 * @param attribute nome do atributo desejado
+	 * @return String com o atributo ou null se não encontrar o atributo.
+	 * @throws IOException se algum problema ocorrer ao ler o arquivo jar.
+	 */
+	public static String getJarAttribute(String jarFilePath, String attribute) throws IOException{
+		JarFile jarFile = new JarFile(jarFilePath);
+		if(jarFile != null){
+			Manifest manifest = jarFile.getManifest();
+			if(manifest != null){
+				Attributes mainAttributes = manifest.getMainAttributes();
+				if(mainAttributes != null){
+					return mainAttributes.getValue(attribute);
+				}
+			}
+		}
+		return null;
+	}
+	
 	private static void doExtractFile(JarFile jarFile, JarEntry jarEntry, File targetFile) throws IOException{
 		InputStream is = jarFile.getInputStream(jarEntry);
 		FileOutputStream fos = new FileOutputStream(targetFile);
