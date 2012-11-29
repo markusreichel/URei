@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.reichel.command.output.Output;
-import org.reichel.command.output.SystemOutPrintOutputImpl;
+import org.reichel.command.output.SystemOutPrintOutputStringImpl;
 
 
 public class Executor {
@@ -15,15 +15,15 @@ public class Executor {
 
 	private Boolean showLog = true;
 	
-	private final Output output;
+	private final Output<String> output;
 	
 	private Process process;
 	
-	public Executor(Output output, String... command){
+	public Executor(Output<String> output, String... command){
 		this(output, true, command);
 	}
 	
-	public Executor(Output output, Boolean showLog, String... commands){
+	public Executor(Output<String> output, Boolean showLog, String... commands){
 		if(output == null){
 			throw new IllegalArgumentException("Parameter output cannot be null.");
 		}
@@ -106,16 +106,16 @@ public class Executor {
 		return process;
 	}
 	
-	public static Executor execute(Output output, boolean showLog, String... args){
+	public static Executor execute(Output<String> output, boolean showLog, String... args){
 		return new Executor(output, showLog, args).execute();
 	}
 	
-	public static Executor execute(Output output, String... args){
+	public static Executor execute(Output<String> output, String... args){
 		return execute(output, true, args);
 	}
 	
 	public static Executor execute(String... args){
-		return execute(new SystemOutPrintOutputImpl(), true, args);
+		return execute(new SystemOutPrintOutputStringImpl(), true, args);
 	}
 	
 	

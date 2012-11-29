@@ -1,6 +1,6 @@
 package org.reichel.command.output;
 
-public interface Output {
+public interface Output<T> {
 
-	void output(String string);
+	void output(T output);
 }

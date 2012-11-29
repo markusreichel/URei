@@ -1,6 +1,6 @@
 package org.reichel.command.output;
 
-public class SystemOutPrintOutputImpl implements Output {
+public class SystemOutPrintOutputStringImpl implements Output<String> {
 
 	@Override
 	public void output(String string) {
