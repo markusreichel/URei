@@ -40,7 +40,7 @@ public class DownloadFile {
 		this(output, filePath, Charset.forName("UTF-8"));
 	}
 	
-	public void connect(String fileName){
+	public DownloadFile connect(String fileName){
 		try {
 			this.url = new URL(this.path + "/" + fileName);
 			this.connection = this.url.openConnection();
@@ -53,6 +53,7 @@ public class DownloadFile {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		return this;
 	}
 	
 	/**
@@ -67,12 +68,13 @@ public class DownloadFile {
 		return this.connection.getInputStream();
 	}
 	
-	public void download(String fileName, String targetFolderPath) throws IOException{
+	public DownloadFile download(String fileName, String targetFolderPath) throws IOException{
 		if(!this.connected){
 			connect(fileName);
 		}
 		saveFile(prepareTargetFolder(fileName, targetFolderPath));
 		this.connected = false;
+		return this;
 	}
 
 	private String prepareTargetFolder(String fileName, String targetFolderPath) {
