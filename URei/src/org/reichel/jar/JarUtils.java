@@ -5,6 +5,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -33,7 +36,7 @@ public class JarUtils {
 	 * @param targetFolder caminho do diretório raiz onde os arquivos serão extraídos ex: config\extract
 	 * @throws IOException quando houver problemas ao ler e/ou escrever arquivos
 	 */
-	public static void extractFiles(String jarFilePath, String targetFolder) throws IOException {
+	public void extractFiles(String jarFilePath, String targetFolder) throws IOException {
 		extractFiles(jarFilePath, targetFolder, true);
 	}
 
@@ -61,7 +64,7 @@ public class JarUtils {
 	 * @param targetFolder caminho do diretório raiz onde os arquivos serão extraídos ex: config\extract
 	 * @throws IOException quando houver problemas ao ler e/ou escrever arquivos
 	 */
-	public static void extractFiles(String jarFilePath, String targetFolder, boolean extractMetaInf) throws IOException {
+	public void extractFiles(String jarFilePath, String targetFolder, boolean extractMetaInf) throws IOException {
 		if(jarFilePath == null || "".equals(jarFilePath)){
 			throw new IllegalArgumentException("Parametro jarFilePath não pode ser vazio ou nulo.");
 		}
@@ -93,9 +96,19 @@ public class JarUtils {
 	 * @return JarVersion objeto com a versão do jar ou null se não encontrar o atributo 'Implementation-Version' no MANIFEST.MF
 	 * @throws IOException se algum problema ocorrer ao ler o arquivo jar.
 	 */
-	public static JarVersion getJarVersion(String jarFilePath) throws IOException{
+	public JarVersion getJarVersion(String jarFilePath) throws IOException{
+		if(jarFilePath == null || "".equals(jarFilePath)){
+			throw new IllegalArgumentException("Parametro jarFilePath não pode ser nulo.");
+		}
 		String jarAttributeVersion = getJarAttribute(jarFilePath, "Implementation-Version");
-		return jarAttributeVersion != null? new JarVersion(jarAttributeVersion) : null;
+		return jarAttributeVersion != null? new JarVersion(jarAttributeVersion, getFileName(jarFilePath)) : null;
+	}
+
+	private String getFileName(String filePath) {
+		if(filePath == null || "".equals(filePath)){
+			throw new IllegalArgumentException("Parametro filePath não pode ser nulo.");
+		}
+		return filePath.lastIndexOf("\\") == -1 ? filePath.substring(filePath.lastIndexOf("/") + 1) : filePath.substring(filePath.lastIndexOf("\\") + 1);
 	}
 
 	/**
@@ -105,7 +118,7 @@ public class JarUtils {
 	 * @return String com o atributo ou null se não encontrar o atributo.
 	 * @throws IOException se algum problema ocorrer ao ler o arquivo jar.
 	 */
-	public static String getJarAttribute(String jarFilePath, String attribute) throws IOException{
+	public String getJarAttribute(String jarFilePath, String attribute) throws IOException{
 		JarFile jarFile = new JarFile(jarFilePath);
 		if(jarFile != null){
 			Manifest manifest = jarFile.getManifest();
@@ -119,7 +132,7 @@ public class JarUtils {
 		return null;
 	}
 	
-	private static void doExtractFile(JarFile jarFile, JarEntry jarEntry, File targetFile) throws IOException{
+	private void doExtractFile(JarFile jarFile, JarEntry jarEntry, File targetFile) throws IOException{
 		InputStream is = jarFile.getInputStream(jarEntry);
 		FileOutputStream fos = new FileOutputStream(targetFile);
 		byte[] buffer = new byte[4096];
@@ -132,7 +145,7 @@ public class JarUtils {
         fos.close();
 	}
 	
-	private static void createDirectories(String targetFolder, File targetFile, JarEntry jarEntry, String name) {
+	private void createDirectories(String targetFolder, File targetFile, JarEntry jarEntry, String name) {
 		if(jarEntry.isDirectory() && !targetFile.exists()){
 			if(!targetFile.mkdirs()){
 				throw new UnsupportedOperationException("Não foi possível criar diretórios:'" + targetFile.getAbsolutePath() + "'");
@@ -146,4 +159,62 @@ public class JarUtils {
 			}
 		}
 	}
+	
+	/**
+	 * Varre o diretório e os sub-diretórios recursivamente em busca de arquivos jar
+	 * populando o mapa com o seu caminho completo com sua respectiva versão.
+	 * Exemplo de utilização:
+	 * <pre>
+	 *   String path="C:\\work\\desenv\\git\\URei\\URei\\target";
+	 *   Map<String, JarVersion> jarVersions = JarUtils.getJarVersions(path, new HashMap&lt;String, JarVersion&gt;());
+	 *   for(Entry<String,JarVersion> jarVersion : jarVersions.entrySet()){
+	 *     System.out.println(jarVersion.getKey() + " : " + jarVersion.getValue());
+	 *   }
+	 * </pre>
+	 * @param targetFolderPath caminho completo do diretório
+	 * @param jarVersions instancia de Map&lt;String,JarVersion&gt; a ser populado com as informações
+	 * @return Map&lt;String,JarVersion&gt com o mapa populado ou vazio se não encontrar arquivos jar
+	 * @throws IOException caso ocorra problema com a manipulação de arquivo
+	 * @see JarUtils#getJarVersion(String)
+	 */
+	public Map<String, JarVersion> getJarVersions(String targetFolderPath, Map<String,JarVersion> jarVersions) throws IOException{
+		File targetFolderFile = new File(targetFolderPath);
+		File file = null;
+		if(targetFolderFile.exists()){
+			if(targetFolderFile.isDirectory()){
+				for(String filePath : targetFolderFile.list()){
+					file = new File(targetFolderFile.getAbsolutePath() + File.separatorChar + filePath);
+					if(file.exists()){
+						 if(file.isDirectory()){
+							 getJarVersions(file.getAbsolutePath(), jarVersions);
+						 } else if(file.getAbsolutePath().toLowerCase().endsWith(".jar")) {
+							 jarVersions.put(file.getName(), getJarVersion(file.getAbsolutePath()));
+						 }
+					}
+				}
+			} else { 
+				jarVersions.put(targetFolderFile.getName(), getJarVersion(targetFolderFile.getAbsolutePath()));
+			}
+		}
+		return jarVersions;
+	}
+	
+	public Map<String,JarVersion> getJarVersions(String keyEndsWith, Properties properties){
+		Map<String,JarVersion> result = new HashMap<String,JarVersion>();
+		if(properties == null){
+			throw new IllegalArgumentException("Parametro properties não pode ser nulo.");
+		}
+		if(keyEndsWith == null || "".equals(keyEndsWith)){
+			throw new IllegalArgumentException("Parametro keyEndsWith não pode ser nulo.");
+		}
+		Enumeration<Object> keys = properties.keys();
+		while(keys.hasMoreElements()){
+			String key = keys.nextElement().toString();
+			if(key.endsWith(keyEndsWith)){
+				result.put(key.replace(keyEndsWith, ".jar"), new JarVersion(properties.getProperty(key), key.replace(keyEndsWith, ".jar")));
+			}
+		}
+		return result;
+	}
+	
 }

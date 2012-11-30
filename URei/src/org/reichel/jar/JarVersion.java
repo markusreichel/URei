@@ -21,13 +21,19 @@ public class JarVersion implements Comparable<JarVersion>{
 	private final Integer minor;
 	
 	private final Integer maintenance;
+	
+	private final String fileName;
 
-	public JarVersion(String fullVersion){
+	public JarVersion(String fullVersion, String fileName){
 		Pattern pattern = Pattern.compile("(\\d+){1}\\.{0,1}(\\d+){0,}\\.{0,1}(\\d+){0,}");
 		Matcher matcher = pattern.matcher(fullVersion);
 		if(!matcher.matches()){
 			throw new IllegalArgumentException("Versão: '" + fullVersion + "' não é uma versão válida, exemplo de versão válida: 1.5.33");
 		}
+		if(fileName == null || "".equals(fileName)){
+			throw new IllegalArgumentException("Parametro fileName não pode ser nulo.");
+		}
+		this.fileName = fileName;
 		this.major = Integer.valueOf(matcher.group(1));
 		this.minor = Integer.valueOf(matcher.group(2) == null ? "0" : matcher.group(2));
 		this.maintenance = Integer.valueOf(matcher.group(3) == null ? "0": matcher.group(3));
@@ -48,6 +54,10 @@ public class JarVersion implements Comparable<JarVersion>{
 	@Override
 	public String toString(){
 		return this.major + "." + this.minor + "." + maintenance;
+	}
+	
+	public String getFileName() {
+		return fileName;
 	}
 
 	@Override
