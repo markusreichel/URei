@@ -75,7 +75,11 @@ public class DownloadFile {
 	}
 	
 	public DownloadFile download(String fileName, String targetFolderPath) throws IOException{
-		if(!this.connected){
+		if(this.connected){
+			if(!this.fileName.equals(fileName)){
+				throw new IllegalArgumentException("fileName: '" + fileName + "' não é o mesmo que this.fileName: '" + this.fileName + "' utilize o método connect para atualizar o fileName.");
+			}
+		} else {
 			connect(fileName);
 		}
 		saveFile(prepareTargetFolder(fileName, targetFolderPath));
@@ -83,10 +87,17 @@ public class DownloadFile {
 		return this;
 	}
 
+	public DownloadFile disconnect() throws IOException{
+		if(this.connected){
+			this.connection.getInputStream().close();
+			this.connected = false;
+		}
+		return this;
+	}
+	
 	public DownloadFile download(String targetFolderPath) throws IOException{
 		if(this.connected){
 			saveFile(prepareTargetFolder(this.fileName, targetFolderPath));
-			this.connected = false;
 		}
 		return this;
 	}
@@ -111,7 +122,7 @@ public class DownloadFile {
 		}
 		fos.flush();
 		fos.close();
-		is.close();
+		disconnect();
 	}
 	
 	public Integer getFileLength() {
