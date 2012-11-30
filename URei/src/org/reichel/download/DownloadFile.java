@@ -31,6 +31,8 @@ public class DownloadFile {
 	
 	private Boolean connected = false;
 	
+	private String fileName;
+	
 	public DownloadFile(Output<Integer> output, String path, Charset charset) throws UnsupportedEncodingException{
 		this.output = output;
 		this.path = URLDecoder.decode(path, charset.name());
@@ -41,7 +43,11 @@ public class DownloadFile {
 	}
 	
 	public DownloadFile connect(String fileName){
+		if(fileName == null || "".equals(fileName)){
+			throw new IllegalArgumentException("fileName não pode ser vazio ou nulo.");
+		}
 		try {
+			this.fileName = fileName;
 			this.url = new URL(this.path + "/" + fileName);
 			this.connection = this.url.openConnection();
 			this.connection.setUseCaches(false);
@@ -77,6 +83,14 @@ public class DownloadFile {
 		return this;
 	}
 
+	public DownloadFile download(String targetFolderPath) throws IOException{
+		if(this.connected){
+			saveFile(prepareTargetFolder(this.fileName, targetFolderPath));
+			this.connected = false;
+		}
+		return this;
+	}
+	
 	private String prepareTargetFolder(String fileName, String targetFolderPath) {
 		String targetFilePath = (targetFolderPath + File.separatorChar + fileName);
 		File targetFolder = new File(targetFilePath.substring(0,targetFilePath.lastIndexOf(File.separatorChar)));
