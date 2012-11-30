@@ -1,12 +1,14 @@
 package org.reichel.jar;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -171,14 +173,18 @@ public class JarUtils {
 	 *     System.out.println(jarVersion.getKey() + " : " + jarVersion.getValue());
 	 *   }
 	 * </pre>
-	 * @param targetFolderPath caminho completo do diretório
+	 * @param rootFolder caminho completo do diretório
 	 * @param jarVersions instancia de Map&lt;String,JarVersion&gt; a ser populado com as informações
 	 * @return Map&lt;String,JarVersion&gt com o mapa populado ou vazio se não encontrar arquivos jar
 	 * @throws IOException caso ocorra problema com a manipulação de arquivo
 	 * @see JarUtils#getJarVersion(String)
 	 */
-	public Map<String, JarVersion> getJarVersions(String targetFolderPath, Map<String,JarVersion> jarVersions) throws IOException{
-		File targetFolderFile = new File(targetFolderPath);
+	public Map<String, JarVersion> getJarVersions(String rootFolder, Map<String,JarVersion> jarVersions) throws IOException{
+		return getJarVersions(rootFolder, rootFolder, jarVersions);
+	}
+	
+	private Map<String, JarVersion> getJarVersions(String rootFolder, String targetFolder, Map<String,JarVersion> jarVersions) throws IOException{
+		File targetFolderFile = new File(targetFolder);
 		File file = null;
 		if(targetFolderFile.exists()){
 			if(targetFolderFile.isDirectory()){
@@ -186,17 +192,31 @@ public class JarUtils {
 					file = new File(targetFolderFile.getAbsolutePath() + File.separatorChar + filePath);
 					if(file.exists()){
 						 if(file.isDirectory()){
-							 getJarVersions(file.getAbsolutePath(), jarVersions);
+							 getJarVersions(rootFolder, file.getAbsolutePath(), jarVersions);
 						 } else if(file.getAbsolutePath().toLowerCase().endsWith(".jar")) {
-							 jarVersions.put(file.getName(), getJarVersion(file.getAbsolutePath()));
+							 jarVersions.put(file.getAbsolutePath().substring(rootFolder.length() + 1), getJarVersion(file.getAbsolutePath()));
 						 }
 					}
 				}
-			} else { 
-				jarVersions.put(targetFolderFile.getName(), getJarVersion(targetFolderFile.getAbsolutePath()));
+			} else if(targetFolderFile.getAbsolutePath().toLowerCase().endsWith(".jar")){ 
+				jarVersions.put(targetFolderFile.getAbsolutePath().substring(rootFolder.length() + 1), getJarVersion(targetFolderFile.getAbsolutePath()));
 			}
 		}
 		return jarVersions;
+	}
+	
+	public static void main(String[] args) throws IOException {
+		Map<String, JarVersion> jarVersions = new JarUtils().getJarVersions("C:\\work\\desenv\\git\\URei\\URei\\target\\test", new HashMap<String,JarVersion>());
+		for(Entry<String,JarVersion> jarVersin : jarVersions.entrySet()){
+			System.out.println(jarVersin.getKey() + ":" + jarVersin.getValue());
+		}
+		
+		Properties properties = new Properties();
+		properties.load(new FileInputStream(new File("C:\\Users\\markus\\git\\AmbienteGui\\AmbienteGui\\config\\files.properties")));
+		jarVersions = new JarUtils().getJarVersions(".version", ".path", properties);
+		for(Entry<String,JarVersion> jarVersin : jarVersions.entrySet()){
+			System.out.println(jarVersin.getKey() + ":" + jarVersin.getValue());
+		}
 	}
 	
 	public Map<String,JarVersion> getJarVersions(String versionEndsWith, String pathEndsWith, Properties properties){
@@ -215,11 +235,11 @@ public class JarUtils {
 				String property = properties.getProperty(fileName + pathEndsWith);
 				if(property != null){
 					property = normalizeFileSeparatorChar(property);
-					if(!property.endsWith(Character.toString(File.separatorChar))){
+					if(!"".equals(property) && !property.endsWith(Character.toString(File.separatorChar))){
 						property += File.separatorChar;
 					}
 				}
-				result.put(fileName + ".jar", new JarVersion(properties.getProperty(key), property + fileName + ".jar"));
+				result.put(property + fileName + ".jar", new JarVersion(properties.getProperty(key), property + fileName + ".jar"));
 			}
 		}
 		return result;
