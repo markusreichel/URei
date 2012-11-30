@@ -199,22 +199,33 @@ public class JarUtils {
 		return jarVersions;
 	}
 	
-	public Map<String,JarVersion> getJarVersions(String keyEndsWith, Properties properties){
+	public Map<String,JarVersion> getJarVersions(String versionEndsWith, String pathEndsWith, Properties properties){
 		Map<String,JarVersion> result = new HashMap<String,JarVersion>();
 		if(properties == null){
 			throw new IllegalArgumentException("Parametro properties não pode ser nulo.");
 		}
-		if(keyEndsWith == null || "".equals(keyEndsWith)){
+		if(versionEndsWith == null || "".equals(versionEndsWith)){
 			throw new IllegalArgumentException("Parametro keyEndsWith não pode ser nulo.");
 		}
 		Enumeration<Object> keys = properties.keys();
 		while(keys.hasMoreElements()){
 			String key = keys.nextElement().toString();
-			if(key.endsWith(keyEndsWith)){
-				result.put(key.replace(keyEndsWith, ".jar"), new JarVersion(properties.getProperty(key), key.replace(keyEndsWith, ".jar")));
+			if(key.endsWith(versionEndsWith)){
+				String fileName = key.replace(versionEndsWith, "");
+				String property = properties.getProperty(fileName + pathEndsWith);
+				if(property != null){
+					property = normalizeFileSeparatorChar(property);
+					if(!property.endsWith(Character.toString(File.separatorChar))){
+						property += File.separatorChar;
+					}
+				}
+				result.put(fileName + ".jar", new JarVersion(properties.getProperty(key), property + fileName + ".jar"));
 			}
 		}
 		return result;
 	}
-	
+
+	public String normalizeFileSeparatorChar(String filePath) {
+		return filePath.replace("\\", Character.toString(File.separatorChar)).replace("/", Character.toString(File.separatorChar));
+	}
 }
