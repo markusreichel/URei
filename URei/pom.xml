@@ -8,10 +8,6 @@
 	<version>1.0.0</version>		
 	<description>Reichel Utils</description>
 
-	<properties>
-		<sabius.common.version>1.5.0.0-SNAPSHOT</sabius.common.version>
-		<sabius.comercial.version>1.5.0.0-SNAPSHOT</sabius.comercial.version>
-	</properties>
 	<build>		
 		<plugins>
 			<plugin>
