@@ -103,7 +103,9 @@ public class JarUtils {
 			throw new IllegalArgumentException("Parametro jarFilePath não pode ser nulo.");
 		}
 		String jarAttributeVersion = getJarAttribute(jarFilePath, "Implementation-Version");
-		return jarAttributeVersion != null? new JarVersion(jarAttributeVersion, getFileName(jarFilePath)) : null;
+		String jarType = getJarAttribute(jarFilePath, "Jar-Type");
+		JarTypeEnum jarTypeEnum = (jarType == null || "".equals(jarType))? JarTypeEnum.JAR : JarTypeEnum.fromType(jarType);
+		return jarAttributeVersion != null? new JarVersion(jarAttributeVersion, getFileName(jarFilePath), jarTypeEnum) : null;
 	}
 
 	private String getFileName(String filePath) {
@@ -228,18 +230,20 @@ public class JarUtils {
 			throw new IllegalArgumentException("Parametro keyEndsWith não pode ser nulo.");
 		}
 		Enumeration<Object> keys = properties.keys();
+		String keyRoot = "";
 		while(keys.hasMoreElements()){
 			String key = keys.nextElement().toString();
 			if(key.endsWith(versionEndsWith)){
-				String fileName = key.replace(versionEndsWith, "");
-				String property = properties.getProperty(fileName + pathEndsWith);
-				if(property != null){
-					property = normalizeFileSeparatorChar(property);
-					if(!"".equals(property) && !property.endsWith(Character.toString(File.separatorChar))){
-						property += File.separatorChar;
+				keyRoot = key.replace(versionEndsWith, ""); 
+				String fileName = keyRoot + "-" + properties.getProperty(key) + ".jar";
+				String relativePath = properties.getProperty(keyRoot + pathEndsWith);
+				if(relativePath != null){
+					relativePath = normalizeFileSeparatorChar(relativePath);
+					if(!"".equals(relativePath) && !relativePath.endsWith(Character.toString(File.separatorChar))){
+						relativePath += File.separatorChar;
 					}
 				}
-				result.put(property + fileName + ".jar", new JarVersion(properties.getProperty(key), property + fileName + ".jar"));
+				result.put(relativePath + fileName, new JarVersion(properties.getProperty(key), relativePath + fileName, JarTypeEnum.fromType(properties.getProperty(keyRoot + ".type"))));
 			}
 		}
 		return result;

@@ -23,8 +23,10 @@ public class JarVersion implements Comparable<JarVersion>{
 	private final Integer maintenance;
 	
 	private final String fileName;
+	
+	private final JarTypeEnum jarTypeEnum;
 
-	public JarVersion(String fullVersion, String fileName){
+	public JarVersion(String fullVersion, String fileName, JarTypeEnum jarTypeEnum){
 		Pattern pattern = Pattern.compile("(\\d+){1}\\.{0,1}(\\d+){0,}\\.{0,1}(\\d+){0,}");
 		Matcher matcher = pattern.matcher(fullVersion);
 		if(!matcher.matches()){
@@ -33,12 +35,16 @@ public class JarVersion implements Comparable<JarVersion>{
 		if(fileName == null || "".equals(fileName)){
 			throw new IllegalArgumentException("Parametro fileName não pode ser nulo.");
 		}
+		if(jarTypeEnum == null){
+			throw new IllegalArgumentException("Parametro jarTypeEnum não pode ser nulo.");
+		}
 		this.fileName = fileName;
+		this.jarTypeEnum = jarTypeEnum;
 		this.major = Integer.valueOf(matcher.group(1));
 		this.minor = Integer.valueOf(matcher.group(2) == null ? "0" : matcher.group(2));
 		this.maintenance = Integer.valueOf(matcher.group(3) == null ? "0": matcher.group(3));
 	}
-	
+
 	public Integer getMajor() {
 		return major;
 	}
@@ -58,6 +64,10 @@ public class JarVersion implements Comparable<JarVersion>{
 	
 	public String getFileName() {
 		return fileName;
+	}
+	
+	public JarTypeEnum getJarTypeEnum() {
+		return jarTypeEnum;
 	}
 
 	@Override
