@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -105,12 +106,28 @@ public class JarUtils {
 		if(jarFilePath == null || "".equals(jarFilePath)){
 			throw new IllegalArgumentException("Parametro jarFilePath não pode ser nulo.");
 		}
+		System.out.println(jarFilePath);
 		String jarAttributeVersion = getJarAttribute(jarFilePath, "Implementation-Version");
 		String jarType = getJarAttribute(jarFilePath, "Jar-Type");
 		JarTypeEnum jarTypeEnum = (jarType == null || "".equals(jarType))? JarTypeEnum.JAR : JarTypeEnum.fromType(jarType);
 		return jarAttributeVersion != null? new JarVersion(jarAttributeVersion, getFileName(jarFilePath), jarTypeEnum) : null;
 	}
 
+	public JarVersion getJarVersion(String rootFolder, String jarFilePath) throws IOException{
+		if(jarFilePath == null || "".equals(jarFilePath)){
+			throw new IllegalArgumentException("Parametro jarFilePath não pode ser nulo.");
+		}
+		if(rootFolder == null || "".equals(rootFolder)){
+			throw new IllegalArgumentException("Parametro rootFolder não pode ser nulo.");
+		}
+		
+		String relativeJarFilePath = jarFilePath.substring(rootFolder.length() + 1);
+		String jarAttributeVersion = getJarAttribute(jarFilePath, "Implementation-Version");
+		String jarType = getJarAttribute(jarFilePath, "Jar-Type");
+		JarTypeEnum jarTypeEnum = (jarType == null || "".equals(jarType))? JarTypeEnum.JAR : JarTypeEnum.fromType(jarType);
+		return jarAttributeVersion != null? new JarVersion(jarAttributeVersion, relativeJarFilePath, jarTypeEnum) : null;
+	}
+	
 	private String getFileName(String filePath) {
 		if(filePath == null || "".equals(filePath)){
 			throw new IllegalArgumentException("Parametro filePath não pode ser nulo.");
@@ -199,12 +216,12 @@ public class JarUtils {
 						 if(file.isDirectory()){
 							 getJarVersions(rootFolder, file.getAbsolutePath(), jarVersions);
 						 } else if(file.getAbsolutePath().toLowerCase().endsWith(".jar")) {
-							 jarVersions.put(file.getAbsolutePath().substring(rootFolder.length() + 1), getJarVersion(file.getAbsolutePath()));
+							 jarVersions.put(file.getAbsolutePath().substring(rootFolder.length() + 1), getJarVersion(rootFolder, file.getAbsolutePath()));
 						 }
 					}
 				}
 			} else if(targetFolderFile.getAbsolutePath().toLowerCase().endsWith(".jar")){ 
-				jarVersions.put(targetFolderFile.getAbsolutePath().substring(rootFolder.length() + 1), getJarVersion(targetFolderFile.getAbsolutePath()));
+				jarVersions.put(targetFolderFile.getAbsolutePath().substring(rootFolder.length() + 1), getJarVersion(rootFolder, targetFolderFile.getAbsolutePath()));
 			}
 		}
 		return jarVersions;
@@ -237,5 +254,12 @@ public class JarUtils {
 
 	public String normalizeFileSeparatorChar(String filePath) {
 		return filePath.replace("\\", Character.toString(File.separatorChar)).replace("/", Character.toString(File.separatorChar));
+	}
+	
+	public static void main(String[] args) throws IOException {
+		Map<String, JarVersion> jarVersions = new JarUtils().getJarVersions("C:\\work\\desenv\\w\\Temp\\ambiente", new HashMap<String,JarVersion>());
+		for(Entry<String, JarVersion> jarVersion : jarVersions.entrySet()){
+			System.out.println(jarVersion.getKey() + " -> " + jarVersion.getValue().getFileName());
+		}
 	}
 }
