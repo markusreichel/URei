@@ -1,14 +1,12 @@
 package org.reichel.jar;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -24,6 +22,11 @@ import java.util.jar.Manifest;
  */
 public class JarUtils {
 
+	public static String PROPERTIES_VERSION = ".version";
+	public static String PROPERTIES_FILENAME = ".filename";
+	public static String PROPERTIES_PATH = ".path";
+	public static String PROPERTIES_TYPE = ".type";
+	
 	/**
 	 * Extrai todos os arquivos de um arquivo jar para um diretório.
 	 * Exemplo de utilização para extrair todos os arquivos:
@@ -207,43 +210,26 @@ public class JarUtils {
 		return jarVersions;
 	}
 	
-	public static void main(String[] args) throws IOException {
-		Map<String, JarVersion> jarVersions = new JarUtils().getJarVersions("C:\\work\\desenv\\git\\URei\\URei\\target\\test", new HashMap<String,JarVersion>());
-		for(Entry<String,JarVersion> jarVersin : jarVersions.entrySet()){
-			System.out.println(jarVersin.getKey() + ":" + jarVersin.getValue());
-		}
-		
-		Properties properties = new Properties();
-		properties.load(new FileInputStream(new File("C:\\Users\\markus\\git\\AmbienteGui\\AmbienteGui\\config\\files.properties")));
-		jarVersions = new JarUtils().getJarVersions(".version", ".path", properties);
-		for(Entry<String,JarVersion> jarVersin : jarVersions.entrySet()){
-			System.out.println(jarVersin.getKey() + ":" + jarVersin.getValue());
-		}
-	}
-	
-	public Map<String,JarVersion> getJarVersions(String versionEndsWith, String pathEndsWith, Properties properties){
+	public Map<String,JarVersion> getJarVersions(Properties properties){
 		Map<String,JarVersion> result = new HashMap<String,JarVersion>();
 		if(properties == null){
 			throw new IllegalArgumentException("Parametro properties não pode ser nulo.");
-		}
-		if(versionEndsWith == null || "".equals(versionEndsWith)){
-			throw new IllegalArgumentException("Parametro keyEndsWith não pode ser nulo.");
 		}
 		Enumeration<Object> keys = properties.keys();
 		String keyRoot = "";
 		while(keys.hasMoreElements()){
 			String key = keys.nextElement().toString();
-			if(key.endsWith(versionEndsWith)){
-				keyRoot = key.replace(versionEndsWith, ""); 
-				String fileName = keyRoot + "-" + properties.getProperty(key) + ".jar";
-				String relativePath = properties.getProperty(keyRoot + pathEndsWith);
+			if(key.endsWith(PROPERTIES_VERSION)){
+				keyRoot = key.replace(PROPERTIES_VERSION, ""); 
+				String fileName = properties.getProperty(keyRoot + PROPERTIES_FILENAME);
+				String relativePath = properties.getProperty(keyRoot + PROPERTIES_PATH);
 				if(relativePath != null){
 					relativePath = normalizeFileSeparatorChar(relativePath);
 					if(!"".equals(relativePath) && !relativePath.endsWith(Character.toString(File.separatorChar))){
 						relativePath += File.separatorChar;
 					}
 				}
-				result.put(relativePath + fileName, new JarVersion(properties.getProperty(key), relativePath + fileName, JarTypeEnum.fromType(properties.getProperty(keyRoot + ".type"))));
+				result.put(relativePath + fileName, new JarVersion(properties.getProperty(key), relativePath + fileName, JarTypeEnum.fromType(properties.getProperty(keyRoot + PROPERTIES_TYPE))));
 			}
 		}
 		return result;
