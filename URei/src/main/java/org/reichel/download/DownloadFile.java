@@ -1,5 +1,6 @@
 package org.reichel.download;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -11,11 +12,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.util.Map.Entry;
-import java.util.Properties;
 
 import org.reichel.command.output.Output;
-import org.reichel.command.output.SystemOutPrintOutputIntegerImpl;
 
 public class DownloadFile {
 
@@ -103,7 +101,7 @@ public class DownloadFile {
 	}
 	
 	private String prepareTargetFolder(String fileName, String targetFolderPath) {
-		String targetFilePath = (targetFolderPath + File.separatorChar + fileName);
+		String targetFilePath = normalizeFilePath(targetFolderPath + File.separatorChar + fileName);
 		File targetFolder = new File(targetFilePath.substring(0,targetFilePath.lastIndexOf(File.separatorChar)));
 		if(!targetFolder.exists()){
 			targetFolder.mkdirs();
@@ -111,16 +109,19 @@ public class DownloadFile {
 		return targetFilePath;
 	}
 
+	private String normalizeFilePath(String targetFilePath) {
+		return targetFilePath.replace("\\", Character.toString(File.separatorChar)).replace("/", Character.toString(File.separatorChar));
+	}
+
 	private void saveFile(String targetFilePath) throws FileNotFoundException, IOException {
 		FileOutputStream fos = new FileOutputStream(new File(targetFilePath));
-		InputStream is = this.connection.getInputStream();
-		byte[] buffer = new byte[1024];
+		BufferedInputStream bufferedInputStream = new BufferedInputStream(this.connection.getInputStream());
+		byte[] buffer = new byte[4096];
 		Integer bytes;
-		while ((bytes = is.read(buffer)) != -1) {
+		while((bytes = bufferedInputStream.read(buffer)) != -1){
+			fos.write(buffer, 0, bytes);
 			this.output.output(bytes);
-			fos.write(buffer);
 		}
-		fos.flush();
 		fos.close();
 		disconnect();
 	}
@@ -131,25 +132,6 @@ public class DownloadFile {
 
 	public Boolean getConnected() {
 		return connected;
-	}
-	
-
-	public static void main(String[] args) throws IOException {
-		String path = "file:///D:/Documents/Markus/git/URei/URei/target";
-		
-		DownloadFile downloadFile = new DownloadFile(new SystemOutPrintOutputIntegerImpl(), path);
-		Properties properties = new Properties();
-		properties.load(downloadFile.getInputStream("files.properties"));
-		String targetFolderPath = "target" + File.separatorChar + "download" + File.separatorChar;
-		
-		for(Entry<Object,Object> entry : properties.entrySet()){
-			for(String file : entry.getValue().toString().split(",") ){
-				if(!"root".equals(entry.getKey().toString())){
-					file = entry.getKey().toString() + File.separatorChar + file;
-				}
-				downloadFile.download(file, targetFolderPath);
-			}
-		}
 	}
 	
 }

@@ -106,7 +106,6 @@ public class JarUtils {
 		if(jarFilePath == null || "".equals(jarFilePath)){
 			throw new IllegalArgumentException("Parametro jarFilePath não pode ser nulo.");
 		}
-		System.out.println(jarFilePath);
 		String jarAttributeVersion = getJarAttribute(jarFilePath, "Implementation-Version");
 		String jarType = getJarAttribute(jarFilePath, "Jar-Type");
 		JarTypeEnum jarTypeEnum = (jarType == null || "".equals(jarType))? JarTypeEnum.JAR : JarTypeEnum.fromType(jarType);
@@ -202,22 +201,28 @@ public class JarUtils {
 	 * @see JarUtils#getJarVersion(String)
 	 */
 	public Map<String, JarVersion> getJarVersions(String rootFolder, Map<String,JarVersion> jarVersions) throws IOException{
-		return getJarVersions(rootFolder, rootFolder, jarVersions);
+		return getJarVersions(rootFolder, rootFolder, jarVersions, (String[]) null);
+	}
+
+	public Map<String, JarVersion> getJarVersions(String rootFolder, Map<String,JarVersion> jarVersions, String ... exceptions) throws IOException{
+		return getJarVersions(rootFolder, rootFolder, jarVersions, exceptions);
 	}
 	
-	private Map<String, JarVersion> getJarVersions(String rootFolder, String targetFolder, Map<String,JarVersion> jarVersions) throws IOException{
+	private Map<String, JarVersion> getJarVersions(String rootFolder, String targetFolder, Map<String,JarVersion> jarVersions, String... exceptions) throws IOException{
 		File targetFolderFile = new File(targetFolder);
 		File file = null;
 		if(targetFolderFile.exists()){
 			if(targetFolderFile.isDirectory()){
-				for(String filePath : targetFolderFile.list()){
-					file = new File(targetFolderFile.getAbsolutePath() + File.separatorChar + filePath);
-					if(file.exists()){
-						 if(file.isDirectory()){
-							 getJarVersions(rootFolder, file.getAbsolutePath(), jarVersions);
-						 } else if(file.getAbsolutePath().toLowerCase().endsWith(".jar")) {
-							 jarVersions.put(file.getAbsolutePath().substring(rootFolder.length() + 1), getJarVersion(rootFolder, file.getAbsolutePath()));
-						 }
+				if(exceptions == null || exceptions.length == 0 || !isException(targetFolderFile.getAbsolutePath(), exceptions)){
+					for(String filePath : targetFolderFile.list()){
+						file = new File(targetFolderFile.getAbsolutePath() + File.separatorChar + filePath);
+						if(file.exists()){
+							 if(file.isDirectory()){
+								 getJarVersions(rootFolder, file.getAbsolutePath(), jarVersions, exceptions);
+							 } else if(file.getAbsolutePath().toLowerCase().endsWith(".jar")) {
+								 jarVersions.put(file.getAbsolutePath().substring(rootFolder.length() + 1), getJarVersion(rootFolder, file.getAbsolutePath()));
+							 }
+						}
 					}
 				}
 			} else if(targetFolderFile.getAbsolutePath().toLowerCase().endsWith(".jar")){ 
@@ -227,6 +232,15 @@ public class JarUtils {
 		return jarVersions;
 	}
 	
+	private boolean isException(String absolutePath, String[] exceptions) {
+		for(String except : exceptions){
+			if(except != null && !"".equals(except) && absolutePath.endsWith(except)){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public Map<String,JarVersion> getJarVersions(Properties properties){
 		Map<String,JarVersion> result = new HashMap<String,JarVersion>();
 		if(properties == null){
