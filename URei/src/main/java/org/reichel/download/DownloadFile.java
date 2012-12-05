@@ -13,11 +13,15 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 
+import org.apache.log4j.Logger;
 import org.reichel.command.output.Output;
+import org.reichel.command.output.SystemOutPrintOutputIntegerImpl;
 
 public class DownloadFile {
 
-	private final String path;
+	private final Logger logger = Logger.getLogger(DownloadFile.class);
+	
+	private final String remoteTargetFolder;
 	
 	private URL url;
 	
@@ -31,33 +35,63 @@ public class DownloadFile {
 	
 	private String fileName;
 	
+	private File downloadedFile;
+	
 	public DownloadFile(Output<Integer> output, String path, Charset charset) throws UnsupportedEncodingException{
 		this.output = output;
-		this.path = URLDecoder.decode(path, charset.name());
+		this.remoteTargetFolder = URLDecoder.decode(path, charset.name());
 	}
 	
-	public DownloadFile(Output<Integer> output, String filePath) throws UnsupportedEncodingException{
-		this(output, filePath, Charset.forName("UTF-8"));
+	public DownloadFile(Output<Integer> output, String remoteTargetFolder) throws UnsupportedEncodingException{
+		this(output, remoteTargetFolder, Charset.forName("UTF-8"));
 	}
 	
 	public DownloadFile connect(String fileName){
 		if(fileName == null || "".equals(fileName)){
 			throw new IllegalArgumentException("fileName não pode ser vazio ou nulo.");
 		}
-		try {
-			this.fileName = fileName;
-			this.url = new URL(this.path + "/" + fileName);
-			this.connection = this.url.openConnection();
-			this.connection.setUseCaches(false);
-			this.connection.connect();
-			this.connected = true;
-			this.fileLength = this.connection.getContentLength();
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		this.fileName = fileName;
+		if(isURL(fileName)){
+			if(isConnectionOpened()){
+				this.connection.setReadTimeout(1000);
+				this.connection.setUseCaches(false);
+				if(isConnected()){
+					this.fileLength = this.connection.getContentLength();
+				}
+			}
 		}
 		return this;
+	}
+
+	private boolean isURL(String fileName) {
+		try {
+			this.url = new URL(this.remoteTargetFolder + "/" + fileName);
+			return true;
+		} catch (MalformedURLException e) {
+			logger.error("Problemas ao montar URL: " + e.getMessage());
+		}
+		return false;
+	}
+
+	private boolean isConnected() {
+		try {
+			this.connection.connect();
+			this.connected = true;
+			return true;
+		} catch (IOException e) {
+			logger.error("Problemas ao conectar-se '" + this.connection.getURL() + "': " + e.getMessage());
+		}
+		return false;
+	}
+
+	private boolean isConnectionOpened() {
+		try {
+			this.connection = this.url.openConnection();
+			return true;
+		} catch (IOException e) {
+			logger.error("Problemas ao abrir conexão '" + this.connection.getURL() + "': " + e.getMessage());
+		}
+		return false;
 	}
 	
 	/**
@@ -93,6 +127,18 @@ public class DownloadFile {
 		return this;
 	}
 	
+	/**
+	 * Este método deve ser chamado após o método connect para que funcione corretamente.
+	 * exemplo:
+	 * <pre>
+	 * new DownloadFile(new SystemOutPrintOutputIntegerImp(), "file:///c:/temp")
+	 *     .connect("temp.txt")
+	 *     .download("d:\\temp");
+	 * </pre>
+	 * @param targetFolderPath
+	 * @return A instancia de DownloadFile
+	 * @throws IOException caso algum problema ocorra ao utilizar connection.getInputStream
+	 */
 	public DownloadFile download(String targetFolderPath) throws IOException{
 		if(this.connected){
 			saveFile(prepareTargetFolder(this.fileName, targetFolderPath));
@@ -106,6 +152,7 @@ public class DownloadFile {
 		if(!targetFolder.exists()){
 			targetFolder.mkdirs();
 		}
+		this.downloadedFile = new File(targetFilePath);
 		return targetFilePath;
 	}
 
@@ -133,5 +180,16 @@ public class DownloadFile {
 	public Boolean getConnected() {
 		return connected;
 	}
+
+	public File getDownloadedFile() {
+		return downloadedFile;
+	}
+
+	public String getRemoteTargetFolder() {
+		return remoteTargetFolder;
+	}
 	
+	public static void main(String[] args) throws UnsupportedEncodingException, IOException {
+		new DownloadFile(new SystemOutPrintOutputIntegerImpl(), "file:///C:/zasdw").connect("xxx").download("c:\\xczxcv");
+	}
 }

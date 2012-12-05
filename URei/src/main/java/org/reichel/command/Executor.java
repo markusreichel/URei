@@ -126,11 +126,4 @@ public class Executor {
 		}
 		return result.toString();
 	}
-	
-	public static void main(String[] args) {
-		Executor execute = Executor.execute("svn","list","-R","http://s00win42.unimedfortaleza.com.br/svn/financas/trunk/");
-//		execute.waitFor();
-		System.out.println("bla");
-		execute.stop();
-	}
 }
