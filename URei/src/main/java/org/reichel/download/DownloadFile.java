@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
@@ -15,11 +17,10 @@ import java.nio.charset.Charset;
 
 import org.apache.log4j.Logger;
 import org.reichel.command.output.Output;
-import org.reichel.command.output.SystemOutPrintOutputIntegerImpl;
 
 public class DownloadFile {
 
-	private final Logger logger = Logger.getLogger(DownloadFile.class);
+	private static final Logger logger = Logger.getLogger(DownloadFile.class);
 	
 	private final String remoteTargetFolder;
 	
@@ -121,7 +122,15 @@ public class DownloadFile {
 
 	public DownloadFile disconnect() throws IOException{
 		if(this.connected){
-			this.connection.getInputStream().close();
+			try {
+				if(this.connection != null && this.connection.getInputStream() != null){
+					this.connection.getInputStream().close();
+				}
+			} catch(SocketTimeoutException e){
+				logger.error("Impossível desconectar url: " + this.url);
+			} catch(SocketException e){
+				logger.error("Impossível desconectar url: " + this.url);
+			}
 			this.connected = false;
 		}
 		return this;
@@ -189,7 +198,7 @@ public class DownloadFile {
 		return remoteTargetFolder;
 	}
 	
-	public static void main(String[] args) throws UnsupportedEncodingException, IOException {
-		new DownloadFile(new SystemOutPrintOutputIntegerImpl(), "file:///C:/zasdw").connect("xxx").download("c:\\xczxcv");
+	public URL getUrl() {
+		return url;
 	}
 }
