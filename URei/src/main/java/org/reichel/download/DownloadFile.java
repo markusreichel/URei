@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -77,9 +78,18 @@ public class DownloadFile {
 	private boolean isConnected() {
 		try {
 			this.connection.connect();
-			this.connected = true;
+			if(this.connection instanceof HttpURLConnection){
+				if(HttpURLConnection.HTTP_OK == ((HttpURLConnection) this.connection).getResponseCode()){
+					this.connected = true;
+				} else {
+					this.connected = false;
+				}
+			} else {
+				this.connected = true;
+			}
 			return true;
 		} catch (IOException e) {
+			this.connected = false;
 			logger.error("Problemas ao conectar-se '" + this.connection.getURL() + "': " + e.getMessage());
 		}
 		return false;

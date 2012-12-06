@@ -1,6 +1,7 @@
 package org.reichel.jar;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +15,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+import org.apache.log4j.Logger;
+
 /**
  * Classe utilitária para lidar com arquivos jar.
  * @author Markus Reichel
@@ -23,6 +26,8 @@ import java.util.jar.Manifest;
  */
 public class JarUtils {
 
+	private static final Logger logger = Logger.getLogger(JarUtils.class);
+	
 	public static String PROPERTIES_VERSION = ".version";
 	public static String PROPERTIES_FILENAME = ".filename";
 	public static String PROPERTIES_PATH = ".path";
@@ -70,7 +75,7 @@ public class JarUtils {
 	 * @param targetFolder caminho do diretório raiz onde os arquivos serão extraídos ex: config\extract
 	 * @throws IOException quando houver problemas ao ler e/ou escrever arquivos
 	 */
-	public void extractFiles(String jarFilePath, String targetFolder, boolean extractMetaInf) throws IOException {
+	public void extractFiles(String jarFilePath, String targetFolder, boolean extractMetaInf) {
 		if(jarFilePath == null || "".equals(jarFilePath)){
 			throw new IllegalArgumentException("Parametro jarFilePath não pode ser vazio ou nulo.");
 		}
@@ -83,15 +88,29 @@ public class JarUtils {
 		}
 		
 		File targetFile = null;
-		JarFile jarFile = new JarFile(new File(jarFilePath));
-		Enumeration<JarEntry> jarEntries = jarFile.entries();
-		while(jarEntries.hasMoreElements()){
-			JarEntry jarEntry = jarEntries.nextElement();
-			String name = jarEntry.getName();
-			if(!name.contains("META-INF") || extractMetaInf){
-				targetFile = new File(targetFolder + name);
-				createDirectories(targetFolder, targetFile, jarEntry, name);
-				doExtractFile(jarFile, jarEntry, targetFile);
+		JarFile jarFile = null;
+		try {
+			jarFile = new JarFile(new File(jarFilePath));
+		} catch (IOException e) {
+			logger.error("Problemas ao criar JarFile: " + jarFilePath + " " + e.getMessage());
+		}
+		if(jarFile != null){
+			Enumeration<JarEntry> jarEntries = jarFile.entries();
+			while(jarEntries.hasMoreElements()){
+				JarEntry jarEntry = jarEntries.nextElement();
+				String name = jarEntry.getName();
+				if(!name.contains("META-INF") || extractMetaInf){
+					targetFile = new File(targetFolder + name);
+					createDirectories(targetFolder, targetFile, jarEntry, name);
+					doExtractFile(jarFile, jarEntry, targetFile);
+				}
+			}
+		}
+		if(jarFile != null){
+			try {
+				jarFile.close();
+			} catch (IOException e) {
+				logger.error("Problemas ao liberar recursos: " + e.getMessage());
 			}
 		}
 	}
@@ -155,17 +174,39 @@ public class JarUtils {
 		return null;
 	}
 	
-	private void doExtractFile(JarFile jarFile, JarEntry jarEntry, File targetFile) throws IOException{
-		InputStream is = jarFile.getInputStream(jarEntry);
-		FileOutputStream fos = new FileOutputStream(targetFile);
+	private void doExtractFile(JarFile jarFile, JarEntry jarEntry, File targetFile) {
+		InputStream is = null;
+		try {
+			is = jarFile.getInputStream(jarEntry);
+		} catch (IOException e) {
+			logger.error("Erro ao pegar inputStream de: " + jarFile.getName() + " " + e.getMessage());
+		}
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(targetFile);
+		} catch (FileNotFoundException e) {
+			logger.error("Erro ao criar FileOutputStream: " + targetFile + " " + e.getMessage());
+		}
 		byte[] buffer = new byte[4096];
 		int bytesRead = 0;
-        while ((bytesRead = is.read(buffer)) != -1) {
-        	 fos.write(buffer, 0, bytesRead);
-        }
-        is.close();
-        fos.flush();
-        fos.close();
+		if(is != null && fos != null){
+	        try {
+				while ((bytesRead = is.read(buffer)) != -1) {
+					 fos.write(buffer, 0, bytesRead);
+				}
+			} catch (IOException e) {
+				logger.error("Erro ao ler do inputStream ou escrever no FileOutputStream: " + e.getMessage());
+			}
+		}
+		if(is != null && fos != null){
+	        try {
+				is.close();
+				fos.flush();
+				fos.close();
+			} catch (IOException e) {
+				logger.error("Problemas ao liberar recursos: " + e.getMessage());
+			}
+		}
 	}
 	
 	private void createDirectories(String targetFolder, File targetFile, JarEntry jarEntry, String name) {
@@ -173,11 +214,16 @@ public class JarUtils {
 			if(!targetFile.mkdirs()){
 				throw new UnsupportedOperationException("Não foi possível criar diretórios:'" + targetFile.getAbsolutePath() + "'");
 			}
-		} else {
-			File file = new File(targetFolder + name.substring(0,name.lastIndexOf("/")));
-			if(!file.exists()){
-				if(!file.mkdirs()){
-					throw new UnsupportedOperationException("Não foi possível criar diretórios:'" + file.getAbsolutePath() + "'");
+		} else if(name != null){
+			name = normalizeFileSeparatorChar(name);
+			String path;
+			if(name.lastIndexOf(File.separatorChar) != -1){
+				path = targetFolder + name.substring(0,name.lastIndexOf(File.separatorChar));	
+				File file = new File(path);
+				if(!file.exists()){
+					if(!file.mkdirs()){
+						throw new UnsupportedOperationException("Não foi possível criar diretórios:'" + file.getAbsolutePath() + "'");
+					}
 				}
 			}
 		}
