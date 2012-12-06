@@ -162,16 +162,24 @@ public class JarUtils {
 	 */
 	public String getJarAttribute(String jarFilePath, String attribute) throws IOException{
 		JarFile jarFile = new JarFile(jarFilePath);
+		String attributeValue = null;
 		if(jarFile != null){
 			Manifest manifest = jarFile.getManifest();
 			if(manifest != null){
 				Attributes mainAttributes = manifest.getMainAttributes();
 				if(mainAttributes != null){
-					return mainAttributes.getValue(attribute);
+					attributeValue = mainAttributes.getValue(attribute);
+				}
+				if(attributeValue == null){
+					for(Entry<String, Attributes> att : jarFile.getManifest().getEntries().entrySet()){
+						if((attributeValue = att.getValue().getValue(attribute)) != null){
+							break;
+						}
+					}
 				}
 			}
 		}
-		return null;
+		return attributeValue;
 	}
 	
 	private void doExtractFile(JarFile jarFile, JarEntry jarEntry, File targetFile) {
@@ -316,10 +324,4 @@ public class JarUtils {
 		return filePath.replace("\\", Character.toString(File.separatorChar)).replace("/", Character.toString(File.separatorChar));
 	}
 	
-	public static void main(String[] args) throws IOException {
-		Map<String, JarVersion> jarVersions = new JarUtils().getJarVersions("C:\\work\\desenv\\w\\Temp\\ambiente", new HashMap<String,JarVersion>());
-		for(Entry<String, JarVersion> jarVersion : jarVersions.entrySet()){
-			System.out.println(jarVersion.getKey() + " -> " + jarVersion.getValue().getFileName());
-		}
-	}
 }
