@@ -323,5 +323,8 @@ public class JarUtils {
 	public String normalizeFileSeparatorChar(String filePath) {
 		return filePath.replace("\\", Character.toString(File.separatorChar)).replace("/", Character.toString(File.separatorChar));
 	}
-	
+
+	public static void main(String[] args) throws IOException {
+		new JarUtils().extractFiles("C:\\work\\desenv\\git\\AmbienteConfig\\AmbienteConfig\\target\\ambiente-config.jar", "C:\\work\\desenv\\git\\AmbienteConfig\\AmbienteConfig\\target\\x");
+	}
 }
