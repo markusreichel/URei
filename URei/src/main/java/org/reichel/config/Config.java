@@ -24,6 +24,8 @@ public class Config {
 	private final String configPath;
 	
 	private final Charset charset;
+	
+	private final File fileConfig; 
 
 	public Config(Charset charset, String configPath){
 		if(charset == null){
@@ -34,7 +36,7 @@ public class Config {
 			logger.error("Parameter configPath cannot be null.");
 			throw new IllegalArgumentException("Parameter configPath cannot be null.");
 		}
-		File fileConfig = new File(configPath);
+		this.fileConfig = new File(configPath);
 		this.configPath = configPath;
 		this.charset = charset;
 		if(!fileConfig.exists()){
@@ -94,6 +96,18 @@ public class Config {
 	public void saveAndReload(){
 		save();
 		reload();
+	}
+
+	public String getConfigPath() {
+		return configPath;
+	}
+
+	public Charset getCharset() {
+		return charset;
+	}
+
+	public File getFileConfig() {
+		return fileConfig;
 	}
 	
 }
