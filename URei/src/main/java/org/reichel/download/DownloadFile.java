@@ -39,6 +39,8 @@ public class DownloadFile {
 	
 	private File downloadedFile;
 	
+	private Integer timeout = 1000;
+	
 	public DownloadFile(Output<Integer> output, String path, Charset charset) throws UnsupportedEncodingException{
 		this.output = output;
 		this.remoteTargetFolder = URLDecoder.decode(path, charset.name());
@@ -55,7 +57,7 @@ public class DownloadFile {
 		this.fileName = fileName;
 		if(isURL(fileName)){
 			if(isConnectionOpened()){
-				this.connection.setReadTimeout(1000);
+				this.connection.setReadTimeout(this.timeout);
 				this.connection.setUseCaches(false);
 				if(isConnected()){
 					this.fileLength = this.connection.getContentLength();
@@ -65,6 +67,11 @@ public class DownloadFile {
 		return this;
 	}
 
+	public DownloadFile timeout(Integer timeout){
+		this.timeout = timeout;
+		return this;
+	}
+	
 	private boolean isURL(String fileName) {
 		try {
 			this.url = new URL(this.remoteTargetFolder + "/" + fileName);
